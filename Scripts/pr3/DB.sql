@@ -53,7 +53,7 @@ CREATE TABLE Orders (
 	Order_Price DECIMAL(18,2) DEFAULT 0,
 	Order_Sale int not null default 0,
 	UserID int not null,
-	FOREIGN KEY (UserID) REFERENCES Users(ID_User)
+	FOREIGN KEY (UserID) REFERENCES Users(ID_User),
 );
 
 -- select * from Orders

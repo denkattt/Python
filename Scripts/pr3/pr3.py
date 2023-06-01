@@ -340,7 +340,6 @@ def userInterface():
             click.pause("1 или 2 или 3\nНажмите любую кнопку для продолжения...")
             userInterface()
 
-
 if __name__ == "__main__":
     dir_path = os.path.dirname(os.path.realpath(__file__))
     file_path = os.path.join(dir_path, 'MailPassword.json')

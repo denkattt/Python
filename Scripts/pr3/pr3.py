@@ -4,18 +4,18 @@ import os
 from random import randint
 from decimal import Decimal
 import smtplib
-
+import json
 
 # подключение к базе данных и создание курсора для выполнения запросов
-connection = pyodbc.connect('Driver={SQL Server}; Server=.\SQLEXPRESS; Database=PythonDB; Trusted_Connection=yes;')
+connection = pyodbc.connect('Driver={SQL Server}; Server=DESS\SQLEXPRESS; Database=PythonDB; Trusted_Connection=yes;')
 cursor = connection.cursor()
 #Текущий пользователь
 user = None
 #Для отправки кода на почту
 smtp_server = "smtp.mail.ru"
 port = 587
-sender_email = "sokol0708044@mail.ru"
-password = "fTtLLzgde8rSsMqTqavP"
+sender_email = ""
+password = ""
 
 def mail(receiver_email, code):
     try:
@@ -59,7 +59,7 @@ def toLogin():
             if user[2] != password:
                 click.pause("Неверный пароль\nНажмите любую кнопку для продолжения...")
                 toLogin()
-        mail(user[7], codeGen())
+        #mail(user[7], codeGen())
     except Exception as e:
         print(e)
 
@@ -92,7 +92,7 @@ def toRegister():
             case "2":
                 role = "Администратор"
             case _:
-                click.pause("1 или 2, другое ненада\nНажмите любую кнопку для продолжения...")
+                click.pause("1 или 2\nНажмите любую кнопку для продолжения...")
                 toRegister()
         insert_query = f"INSERT INTO Users (User_Login, User_Password, User_Role, User_Mail) VALUES ('{login}', '{password}', '{role}', '{toEmail}')"
         cursor.execute(insert_query)
@@ -109,7 +109,7 @@ def selectIngredient():
         cursor.execute(select_query)
         ingrs = cursor.fetchall()
         for i in ingrs:
-            print(f"{i[0]} - {i[1]} - {i[2]} - {i[3]}")
+            print(f"{i[0]} - {i[1]} - {i[2]}$ - {i[3]}шт - {i[4]}$(Закупочная цена)")
         ingrID = input("Введите номер ингредиента: ")
         ingr = ingrs[int(ingrID)-1]
         if ingr is None:
@@ -127,18 +127,18 @@ def buyIngredient(ingr):
         os.system('cls')
         balance = user[4]
         print(f"[ЗАКУПКА ИНГРЕДИЕНТОВ (баланс: {balance})]")
-        count = int(input("Введите количество: "))
+        count = int(input("Введите количество ингредиентов для закупки: "))
         price = ingr[2]*count
         if balance < price:
             click.pause(f"Недостаточно средств, необходимо {price}, а в наличии только {balance}.\nНажмите любую кнопку для продолжения...")
             return
-        user[1] -= price
+        user[4] -= price
         insert_query = f"UPDATE [dbo].[Ingredients] SET [ActualCount] = {ingr[3]}+{count} WHERE [Ingredient_Name] = '{ingr[1]}'"
         cursor.execute(insert_query)
         insert_query = f"UPDATE [dbo].[Users] SET [User_Balance] = {balance}-{price} WHERE [User_Login] = '{user[1]}'"
         cursor.execute(insert_query)
         connection.commit()
-        click.pause(f"Игредиент '{ingr[1]}' закуплен в количестве {count}шт.\nТеперь на складе {ingr[3]+count}шт.\nНажмите любую кнопку для продолжения...")
+        click.pause(f"Ингредиент '{ingr[1]}' закуплен в количестве {count}шт.\nТеперь на складе {ingr[3]+count}шт.\nНажмите любую кнопку для продолжения...")
     except Exception as e:
         print(e)
     
@@ -147,14 +147,14 @@ def changeIngredient(ingr):
     try:
         os.system('cls')
         print("[ИЗМЕНЕНИЕ ИНГРЕДИЕНТОВ]")
-        if(input("Изменить название?")=="Да"):
+        if(input("Изменить название?(Да/Нет)")=="Да"):
             ingr[1] = input("Введите новое название: ")
-        if(input("Изменить цену?")=="Да"):
+        if(input("Изменить цену?(Да/Нет)")=="Да"):
             ingr[2] = input("Введите новую цену: ")
         update_query = f"UPDATE [dbo].[Ingredients] SET [Ingredient_Name] = '{ingr[1]}', [Ingredient_Price] = {ingr[2]} WHERE [ID_Ingredients] = {ingr[0]}"
         cursor.execute(update_query)
         connection.commit()
-        click.pause(f"Игредиент '{ingr[1]}' изменен\nНажмите любую кнопку для продолжения...")
+        click.pause(f"Ингредиент '{ingr[1]}' изменен\nНажмите любую кнопку для продолжения...")
     except Exception as e:
         print(e)
 
@@ -164,13 +164,13 @@ def deleteIngredient(ingr):
     try:
         os.system('cls')
         print("[УДАЛЕНИЕ ИНГРЕДИЕНТОВ]")
-        if(input("Вы уверены?")=="Да"):
+        if(input("Вы уверены?(Да/Нет)")=="Да"):
             delete_query = f"DELETE FROM [dbo].[Ingredients] WHERE [ID_Ingredients] = {ingr[0]}"
             cursor.execute(delete_query)
             connection.commit()
-            click.pause(f"Игредиент '{ingr[1]}' удален\nНажмите любую кнопку для продолжения...")
+            click.pause(f"Ингредиент '{ingr[1]}' удален\nНажмите любую кнопку для продолжения...")
         else:
-            click.pause(f"Игредиент '{ingr[1]}' не удален\nНажмите любую кнопку для продолжения...")
+            click.pause(f"Ингредиент '{ingr[1]}' не удален\nНажмите любую кнопку для продолжения...")
     except Exception as e:
         print(e)
 
@@ -186,7 +186,7 @@ def addIngredient():
         insert_query = f"INSERT INTO Ingredients (Ingredient_Name, Ingredient_Price, Ingredient_BuyPrice) VALUES ('{name}', {price}, {buyprice})"
         cursor.execute(insert_query)
         connection.commit()
-        click.pause(f"Игредиент '{name}' добавлен\nНажмите любую кнопку для продолжения...")
+        click.pause(f"Ингредиент '{name}' добавлен\nНажмите любую кнопку для продолжения...")
     except Exception as e:
         print(e)
 
@@ -212,7 +212,7 @@ def userHistory(userID):
 
 
 def adminInterface():
-    match(input("Выберите функцию!  (1 - Выбор игредиента, 2 - Добавление ингредиента, 3 - История, 4 - Выход): ")):
+    match(input("Выберите функцию!  (1 - Выбор ингредиента, 2 - Добавление ингредиента, 3 - История, 4 - Выход): ")):
         case "1":
             select = selectIngredient()
             match(input(f"Действие с ингредиентом '{select[1]}'  (1 - Закупка, 2 - Изменение, 3 - Удаление): ")):
@@ -223,7 +223,7 @@ def adminInterface():
                 case "3":
                     deleteIngredient(select)
                 case _:
-                    click.pause("1 или 2, другое ненада\nНажмите любую кнопку для продолжения...")              
+                    click.pause("1 или 2\nНажмите любую кнопку для продолжения...")              
         case "2":
             addIngredient()
         case "3":
@@ -237,7 +237,7 @@ def adminInterface():
         case "4":
             exit()
         case _:
-            click.pause("1 или 2 или 3, другое ненада\nНажмите любую кнопку для продолжения...")
+            click.pause("1 или 2 или 3\nНажмите любую кнопку для продолжения...")
             adminInterface()
 
 def calculateStorage(ingrs, count):
@@ -264,7 +264,7 @@ def requestAdd():
 def countSale():
     sale = 0
     if(randint(1, 6)==5):
-        print("В ВАШЕМ ЗАКАЗЕ БЫЛ НАЙДЕН ТАРАКАН, МЫ ПРЕДОСТАВИМ ВАМ СКИДКУ В 30%! 😱")
+        print("В ВАШЕМ ЗАКАЗЕ БЫЛ НАЙДЕН ТАРАКАН, МЫ ПРЕДОСТАВИМ ВАМ СКИДКУ В 30%!")
         sale += 30
     match(user[5]):
         case "Бронзовая":
@@ -275,100 +275,40 @@ def countSale():
             sale += 20
     return sale
 
-
-# def productBuy():
-#     print(f"Приветствую {user[1]} на окне составлерния за   за! 👋 Ваш баланс составляет {user[4]}💲. \nДействует акция за каждые 3 купленные чикен премьеров халапенью - вы получаете халапенье в подарок! 🔥🎁")
-#     ingrs = cursor.execute("SELECT * FROM Ingredients where isHolopenye = 1").fetchall()
-#     price = calculatePrice(ingrs)
-#     count = int(input(f"Сколько чикен премьеров халапенью вы хотите купить? 🤔 ({price}💲/шт)   : "))
-#     if not calculateStorage(ingrs, count):
-#         print("Извините, на складе недостаточно ингредиентов!😔 \nМы понимаем вашу любовь к халапенью, но пока что мы не можем ее удовлетворить! 😔")
-#         click.pause("Нажмите любую кнопку для продолжения...")
-#         return
-#     price *= count
-#     act = calculateAction(count)
-#     if act > 0:
-#         print(f"Вы купите {count} чикен премьер холопенье! Вы получаете {act} халапенья в подарок! 🎁")
-#     else:
-#         print(f"Вы купите {count} чикен премьер холопенье! На акцию не хватает! 😔")
-#     ingrAddList = {"ingr":[], "count":[]}
-
-
-#     while requestAdd():
-#         addingrs = cursor.execute("SELECT * FROM Ingredients where isHolopenye = 0").fetchall()
-#         num = 1
-#         for i in addingrs:
-#             print(f"{num} - {i[1]} - {i[2]}💲")
-#             num+=1
-#         ingrID = int(input("Введите номер ингредиента, который вы хотите добавить: "))
-#         addcount = int(input("Введите количество ингредиента, который вы хотите добавить: "))
-#         if addingrs[ingrID-1][3] < addcount:
-#             print("Извините, но на складе нет такого количества ингредиентов!😔\n ")
-#             click.pause("Нажмите любую кнопку для продолжения...")
-#             return
-#         price += float(addingrs[ingrID-1][2]) * addcount
-#         ingrAddList["ingr"].append(addingrs[ingrID-1][0])
-#         ingrAddList["count"].append(addcount)
-#         # ingrAddList += [addingrs[ingrID-1][0]],[addcount]
-#         print(f"Вы добавили {i[ingrID]} в заказ! ({addcount} шт)")
-
-
-#     sale = countSale()
-#     price -= price * (sale/100)
-#     print(f"Стоимость заказа составит {price}💲 (Скидка {sale}%)")
-#     if input("Вы уверены, что хотите совершить покупку? (Да/Нет): ") != "Да":
-#         return
-#     if user[4] < price:
-#         print("Извините, но у вас недостаточно средств!😔\n ")
-#         click.pause("Нажмите любую кнопку для продолжения...")
-#         return
-#     cursor.execute(f"UPDATE Users SET User_Balance = {user[4]} - {price} WHERE ID_User = {user[0]}")
-#     cursor.execute(f"INSERT INTO Orders (UserID, Order_Price, Order_Count, Order_Sale) VALUES ({user[0]}, {price}, {count}, {sale})")
-    
-#     count = len(ingrAddList["ingr"])
-#     if(count > 0):
-#         orderID = cursor.execute("SELECT MAX(ID_Order) FROM Orders").fetchone()[0]
-#         for i in range(count):
-#             ingID = ingrAddList["ingr"][i]
-#             ingCount = ingrAddList["count"][i]
-#             cursor.execute(f"insert into Ingredient_Orders (OrderID, IngredientID, Count) values ({orderID}, {ingID}, {ingCount})")
-#     connection.commit()
-#     user[4] -= Decimal(price)
-
 def productBuy():
-    print(f"Приветствую {user[1]} на окне составлерния за   за! 👋 Ваш баланс составляет {user[4]}💲. \nДействует акция за каждые 3 купленные чикен премьеров халапенью - вы получаете халапенье в подарок! 🔥🎁")
+    print(f"Приветствую {user[1]} на окне составления заказа! Ваш баланс составляет {user[4]}$.\nДействует акция за каждые 3 купленные окрошки на квасе - вы получаете окрошку на квасе в подарок!")
     ingrs = cursor.execute("SELECT * FROM Ingredients").fetchall()
     basePrice = 50
-    orderCount = int(input(f"Сколько чикен премьеров халапенью вы хотите купить? 🤔 ({basePrice}💲/шт)   : "))
+    orderCount = int(input(f"Сколько окрошек на квасе вы хотите купить? ({basePrice}$/шт)   : "))
     orderPrice = basePrice * orderCount
     burgers = []
     for i in range(orderCount):
-        print(f"СБОРКА ЧИКЕН ПРЕМЬЕРА ХОЛОПЕНЬЕ №{i+1}")
+        print(f"СБОРКА ОКРОШКИ №{i+1}")
         ingrAddList = {"ingr":[], "count":[], "price":0}
         while requestAdd():
             num = 1
             for i in ingrs:
-                print(f"{num} - {i[1]} - {i[2]}💲")
+                print(f"{num} - {i[1]} - {i[2]}$")
                 num+=1
             ingrID = int(input("Введите номер ингредиента, который вы хотите добавить: "))-1
             addcount = int(input("Введите количество ингредиента, который вы хотите добавить: "))
             if ingrs[ingrID-1][3] < addcount:
-                print("Извините, но на складе нет такого количества ингредиентов!😔\n ")
+                print("Извините, но на складе нет такого количества ингредиентов!\n ")
                 click.pause("Нажмите любую кнопку для продолжения...")
                 return
             orderPrice += float(ingrs[ingrID][2]) * addcount
             ingrAddList["price"] += float(ingrs[ingrID][2]) * addcount
             ingrAddList["ingr"].append(ingrs[ingrID][0])
             ingrAddList["count"].append(addcount)
-            print(f"Вы добавили {ingrs[ingrID]} в заказ №{num}! ({addcount} шт)")
+            print(f"Вы добавили \"{ingrs[ingrID][1]}\" в заказ №{num}! ({addcount} шт)")
         burgers.append(ingrAddList)
     sale = countSale()
     orderPrice -= orderPrice * (sale/100)
-    print(f"Стоимость заказа составит {orderPrice}💲 (Скидка {sale}%)")
+    print(f"Стоимость заказа составит {orderPrice} (Скидка {sale}%)")
     if input("Вы уверены, что хотите совершить покупку? (Да/Нет): ") != "Да":
         return
     if user[4] < orderPrice:
-        print("Извините, но у вас недостаточно средств!😔\n ")
+        print("Извините, но у вас недостаточно средств!\n ")
         click.pause("Нажмите любую кнопку для продолжения...")
         return
     cursor.execute(f"UPDATE Users SET User_Balance = {user[4]} - {orderPrice} WHERE ID_User = {user[0]}")
@@ -397,19 +337,19 @@ def userInterface():
         case "3":
             exit()
         case _:
-            click.pause("1 или 2 или 3, другое ненада\nНажмите любую кнопку для продолжения...")
+            click.pause("1 или 2 или 3\nНажмите любую кнопку для продолжения...")
             userInterface()
 
 
 if __name__ == "__main__":
-    print("""
- 🔥 ВКУСНО И ТОЧКА 🔥
-    /\_/\           ___
-   = o_o =_______    \ \  
-    __^      __(  \.__) )
-  <_____>__(_____)____/
-    """)
-    match(input("ДОБРО ПОЖАЛОВАТЬ, выберите функцию!  (1 - Авторизация, 2 - Регистрация, 3 - Выход): ")):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    file_path = os.path.join(dir_path, 'MailPassword.json')
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+        sender_email = data['Mail']
+        password = data['Password']
+    os.system('cls')
+    match(input("ДОБРО ПОЖАЛОВАТЬ!\nВыберите функцию(1 - Авторизация, 2 - Регистрация, 3 - Выход): ")):
         case "1":
             toLogin()
         case "2":
@@ -418,7 +358,7 @@ if __name__ == "__main__":
             exit()
     while 1:
         os.system('cls')
-        print(f"Добро пожаловать {user[1]}! Вход выполнен под ролью \"{user[3]}\" ({user[4]}💲)")
+        print(f"Добро пожаловать {user[1]}! Вход выполнен под ролью \"{user[3]}\" ({user[4]}$)")
         match(user[3]):
             case "Администратор":
                 adminInterface()

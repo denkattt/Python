@@ -8,8 +8,8 @@ go
 use [master]
 go
 
-drop database [pythonDB]
-go
+--drop database [pythonDB]
+--go
 
 CREATE DATABASE [pythonDB]
 go
@@ -30,7 +30,7 @@ CREATE TABLE Users (
     User_Login VARCHAR(50) NOT NULL,
     User_Password VARCHAR(50) NOT NULL,
     User_Role VARCHAR(20) CHECK (User_Role IN ('Пользователь', 'Администратор')) NOT NULL,
-    User_Balance DECIMAL(18,2) DEFAULT 5000,
+    User_Balance DECIMAL(18,2) DEFAULT 50000,
     User_Card VARCHAR(20) CHECK (User_Card IN ('Нет', 'Бронзовая', 'Серебряная', 'Золотая')) DEFAULT 'Нет',
 	User_SumBuy DECIMAL(18,2) DEFAULT 0,
 	User_Mail VARCHAR(max) NOT NULL,

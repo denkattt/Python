@@ -33,18 +33,11 @@ CREATE TABLE Users (
     User_Balance DECIMAL(18,2) DEFAULT 50000,
     User_Card VARCHAR(20) CHECK (User_Card IN ('Нет', 'Бронзовая', 'Серебряная', 'Золотая')) DEFAULT 'Нет',
 	User_SumBuy DECIMAL(18,2) DEFAULT 0,
-	User_Mail VARCHAR(max) NOT NULL,
-	CONSTRAINT CK_User_Card CHECK ((User_Card = 'Нет' AND User_SumBuy = 0) OR (User_Card = 'Бронзовая' AND User_SumBuy = 5000) OR (User_Card = 'Серебряная' AND User_SumBuy = 15000) OR (User_Card = 'Золотая' AND User_SumBuy = 25000))
+	User_Mail VARCHAR(max) NOT NULL
 );
 
-INSERT INTO [dbo].[Users]
-([User_Login],[User_Password],[User_Role],[User_Balance], [User_Mail]) VALUES
-('test', 'test123', 'Пользователь', 155000, 'lebedev.k4@yandex.ru'),
-('user', 'user', 'Пользователь', 5555000, 'lebedev.k4@yandex.ru'),
-('admin', 'admin', 'Администратор', 5555550, 'lebedev.k4@yandex.ru')
-GO
+--select * from Users
 
--- Создание таблицы заказов блюд
 CREATE TABLE Orders (
     ID_Order INT PRIMARY KEY IDENTITY(1,1),
     Order_ProductName VARCHAR(MAX) NOT NULL DEFAULT('Окрошка на квасе'),
@@ -56,9 +49,6 @@ CREATE TABLE Orders (
 	FOREIGN KEY (UserID) REFERENCES Users(ID_User),
 );
 
--- select * from Orders
-
--- Создание таблицы заказов ингредиентов
 CREATE TABLE Ingredient_Orders(
     ID_IngredientOrders INT PRIMARY KEY IDENTITY(1,1),
     IngredientID INT NOT NULL,
@@ -67,6 +57,8 @@ CREATE TABLE Ingredient_Orders(
     FOREIGN KEY (IngredientID) REFERENCES Ingredients(ID_Ingredients),
 	FOREIGN KEY (OrderID) REFERENCES Orders(ID_Order)
 );
+
+--select * from Orders
 
 INSERT INTO [dbo].[Ingredients]
 ([Ingredient_Name],[Ingredient_Price],[ActualCount],[Ingredient_BuyPrice]) VALUES 
@@ -82,4 +74,13 @@ INSERT INTO [dbo].[Ingredients]
 ('Соль', 10, 50, 5)
 GO
 
-SELECT * FROM Ingredients
+select * from Ingredients
+
+INSERT INTO [dbo].[Users]
+([User_Login],[User_Password],[User_Role],[User_Balance], [User_Mail]) VALUES
+('test', 'test123', 'Пользователь', 155000, 'lebedev.k4@yandex.ru'),
+('user', 'user', 'Пользователь', 5555000, 'lebedev.k4@yandex.ru'),
+('admin', 'admin', 'Администратор', 5555550, 'lebedev.k4@yandex.ru')
+GO
+
+--SELECT * FROM Ingredients

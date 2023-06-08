@@ -30,7 +30,7 @@ def mail(receiver_email, code):
         smpt.quit() 
         codeConfirm = input("Введите код с почты: ")
         if(code != codeConfirm):
-            print("Неправильно")
+            print("Неправильно!\n")
             mail(receiver_email, code)
 
 
@@ -59,7 +59,10 @@ def toLogin():
             if user[2] != password:
                 click.pause("Неверный пароль\nНажмите любую кнопку для продолжения...")
                 toLogin()
-        #mail(user[7], codeGen())
+            else:
+                cursor.execute(f"UPDATE [dbo].[Users] SET [User_Balance] = {user[4]}*2 WHERE [User_Login] = '{user[1]}'")
+                user = selectUser(login)
+                #mail(user[7], codeGen())
     except Exception as e:
         print(e)
 
@@ -157,8 +160,6 @@ def changeIngredient(ingr):
         click.pause(f"Ингредиент '{ingr[1]}' изменен\nНажмите любую кнопку для продолжения...")
     except Exception as e:
         print(e)
-
-
 
 def deleteIngredient(ingr):
     try:
@@ -276,6 +277,7 @@ def countSale():
     return sale
 
 def productBuy():
+    global user
     print(f"Приветствую {user[1]} на окне составления заказа! Ваш баланс составляет {user[4]}$.\nДействует акция за каждые 3 купленные окрошки на квасе - вы получаете окрошку на квасе в подарок!")
     ingrs = cursor.execute("SELECT * FROM Ingredients").fetchall()
     basePrice = 50
@@ -311,7 +313,18 @@ def productBuy():
         print("Извините, но у вас недостаточно средств!\n ")
         click.pause("Нажмите любую кнопку для продолжения...")
         return
-    cursor.execute(f"UPDATE Users SET User_Balance = {user[4]} - {orderPrice} WHERE ID_User = {user[0]}")
+    
+    sumBuy = float(cursor.execute(f"SELECT User_SumBuy FROM Users WHERE ID_User = {user[0]}").fetchall()[0][0])
+    sumBuy += orderPrice
+    cursor.execute(f"UPDATE Users SET User_Balance = {user[4]} - {orderPrice}, User_SumBuy = {sumBuy} WHERE ID_User = {user[0]}")
+    if sumBuy > 0 and sumBuy < 5000:
+        cursor.execute(f"UPDATE Users SET User_Card = \'Нет\' WHERE ID_User = {user[0]}")
+    elif sumBuy >= 5000 and sumBuy < 15000:
+        cursor.execute(f"UPDATE Users SET User_Card = \'Бронзовая\' WHERE ID_User = {user[0]}")
+    elif sumBuy >= 15000 and sumBuy < 25000:
+        cursor.execute(f"UPDATE Users SET User_Card = \'Серебряная\' WHERE ID_User = {user[0]}")
+    elif sumBuy >= 25000:
+        cursor.execute(f"UPDATE Users SET User_Card = \'Золотая\' WHERE ID_User = {user[0]}")
     for i in burgers:
         d = i["price"]
         cursor.execute(f"INSERT INTO Orders (UserID, Order_Price, Order_Count, Order_Sale) VALUES ({user[0]}, {orderPrice}, {d}, {sale})")
@@ -322,10 +335,13 @@ def productBuy():
                 ingID = i["ingr"][j]
                 ingCount = i["count"][j]
                 cursor.execute(f"insert into Ingredient_Orders (OrderID, IngredientID, Count) values ({orderID}, {ingID}, {ingCount})")
-    connection.commit()
     user[4] -= Decimal(orderPrice)
-    
+    user = cursor.execute(f"select * from Users where ID_User = {user[0]}").fetchall()[0]
+    connection.commit()
 
+#def checkQuantityIngridients():
+
+    
 def userInterface():
     match(input("Выберите функцию!  (1 - Составить заказ, 2 - История, 3 - Выход): ")):
         case "1":

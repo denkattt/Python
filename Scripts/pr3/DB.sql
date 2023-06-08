@@ -36,8 +36,6 @@ CREATE TABLE Users (
 	User_Mail VARCHAR(max) NOT NULL
 );
 
---select * from Users
-
 CREATE TABLE Orders (
     ID_Order INT PRIMARY KEY IDENTITY(1,1),
     Order_ProductName VARCHAR(MAX) NOT NULL DEFAULT('Окрошка на квасе'),
@@ -57,8 +55,6 @@ CREATE TABLE Ingredient_Orders(
     FOREIGN KEY (IngredientID) REFERENCES Ingredients(ID_Ingredients),
 	FOREIGN KEY (OrderID) REFERENCES Orders(ID_Order)
 );
-
---select * from Orders
 
 INSERT INTO [dbo].[Ingredients]
 ([Ingredient_Name],[Ingredient_Price],[ActualCount],[Ingredient_BuyPrice]) VALUES 

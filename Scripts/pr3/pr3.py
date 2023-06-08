@@ -6,12 +6,9 @@ from decimal import Decimal
 import smtplib
 import json
 
-# подключение к базе данных и создание курсора для выполнения запросов
 connection = pyodbc.connect('Driver={SQL Server}; Server=DESS\SQLEXPRESS; Database=PythonDB; Trusted_Connection=yes;')
 cursor = connection.cursor()
-#Текущий пользователь
 user = None
-#Для отправки кода на почту
 smtp_server = "smtp.mail.ru"
 port = 587
 sender_email = ""
@@ -36,13 +33,9 @@ def mail(receiver_email, code):
 
 def selectUser(login):
     try:
-        select_query = f"SELECT * FROM Users WHERE User_Login = '{login}'"
-        cursor.execute(select_query)
-        user = cursor.fetchone()
-        return user
+        return cursor.execute(f"SELECT * FROM Users WHERE User_Login = '{login}'").fetchone()
     except Exception as e:
         print(e)
-
 
 def toLogin():
     try:
@@ -65,11 +58,6 @@ def toLogin():
                 #mail(user[7], codeGen())
     except Exception as e:
         print(e)
-
-
-def codeGen():
-    return str(randint(100000,999999))
-
 
 def toRegister():
     try:
@@ -105,7 +93,6 @@ def toRegister():
     except Exception as e:
         print(e)
 
-
 def selectIngredient():
     try:
         select_query = f"SELECT * FROM Ingredients"
@@ -122,8 +109,6 @@ def selectIngredient():
             return ingr
     except Exception as e:
         print(e)
-
-
 
 def buyIngredient(ingr):
     try:
@@ -145,7 +130,6 @@ def buyIngredient(ingr):
     except Exception as e:
         print(e)
     
-
 def changeIngredient(ingr):
     try:
         os.system('cls')
@@ -175,8 +159,6 @@ def deleteIngredient(ingr):
     except Exception as e:
         print(e)
 
-
-
 def addIngredient():
     try:
         os.system('cls')
@@ -190,8 +172,6 @@ def addIngredient():
         click.pause(f"Ингредиент '{name}' добавлен\nНажмите любую кнопку для продолжения...")
     except Exception as e:
         print(e)
-
-
 
 def userHistory(userID):
     try:
@@ -210,7 +190,6 @@ def userHistory(userID):
         click.pause(f"Нажмите любую кнопку для продолжения...")
     except Exception as e:
         print(e)
-
 
 def adminInterface():
     match(input("Выберите функцию!  (1 - Выбор ингредиента, 2 - Добавление ингредиента, 3 - История, 4 - Выход): ")):
@@ -259,6 +238,9 @@ def calculateAction(count):
     else:
         return 0
     
+def codeGen():
+    return str(randint(100000,999999))
+
 def requestAdd():
     return input("Вы хотите добавить дополнительные ингредиенты в заказ? (Да/Нет): ")== "Да"
 
@@ -278,13 +260,21 @@ def countSale():
 
 def productBuy():
     global user
-    print(f"Приветствую {user[1]} на окне составления заказа! Ваш баланс составляет {user[4]}$.\nДействует акция за каждые 3 купленные окрошки на квасе - вы получаете окрошку на квасе в подарок!")
+    print(f"Приветствую {user[1]} на окне составления заказа!\nДействует акция за каждые 3 купленные окрошки на квасе - вы получаете окрошку на квасе в подарок!")
     ingrs = cursor.execute("SELECT * FROM Ingredients").fetchall()
     basePrice = 50
     orderCount = int(input(f"Сколько окрошек на квасе вы хотите купить? ({basePrice}$/шт)   : "))
+    orderCountTemp = orderCount + orderCount // 3
+    for o in ingrs:
+        o[3]  -= orderCountTemp
+        if o[3] < 0:
+            print("Извините, но на складе нет такого количества ингредиентов!\n ")
+            click.pause("Нажмите любую кнопку для продолжения...")
+            return
+        
     orderPrice = basePrice * orderCount
-    burgers = []
-    for i in range(orderCount):
+    product = []
+    for i in range(orderCountTemp):
         print(f"СБОРКА ОКРОШКИ №{i+1}")
         ingrAddList = {"ingr":[], "count":[], "price":0}
         while requestAdd():
@@ -294,16 +284,18 @@ def productBuy():
                 num+=1
             ingrID = int(input("Введите номер ингредиента, который вы хотите добавить: "))-1
             addcount = int(input("Введите количество ингредиента, который вы хотите добавить: "))
-            if ingrs[ingrID-1][3] < addcount:
+            if ingrs[ingrID][3] < addcount:
                 print("Извините, но на складе нет такого количества ингредиентов!\n ")
                 click.pause("Нажмите любую кнопку для продолжения...")
                 return
+            else:
+                ingrs[ingrID][3]  -= addcount
             orderPrice += float(ingrs[ingrID][2]) * addcount
             ingrAddList["price"] += float(ingrs[ingrID][2]) * addcount
             ingrAddList["ingr"].append(ingrs[ingrID][0])
             ingrAddList["count"].append(addcount)
             print(f"Вы добавили \"{ingrs[ingrID][1]}\" в заказ №{num}! ({addcount} шт)")
-        burgers.append(ingrAddList)
+        product.append(ingrAddList)
     sale = countSale()
     orderPrice -= orderPrice * (sale/100)
     print(f"Стоимость заказа составит {orderPrice} (Скидка {sale}%)")
@@ -314,6 +306,9 @@ def productBuy():
         click.pause("Нажмите любую кнопку для продолжения...")
         return
     
+    for i in ingrs:
+        cursor.execute(f"UPDATE Ingredients SET ActualCount = {i[3]} WHERE ID_Ingredients = {i[0]}")
+
     sumBuy = float(cursor.execute(f"SELECT User_SumBuy FROM Users WHERE ID_User = {user[0]}").fetchall()[0][0])
     sumBuy += orderPrice
     cursor.execute(f"UPDATE Users SET User_Balance = {user[4]} - {orderPrice}, User_SumBuy = {sumBuy} WHERE ID_User = {user[0]}")
@@ -325,7 +320,7 @@ def productBuy():
         cursor.execute(f"UPDATE Users SET User_Card = \'Серебряная\' WHERE ID_User = {user[0]}")
     elif sumBuy >= 25000:
         cursor.execute(f"UPDATE Users SET User_Card = \'Золотая\' WHERE ID_User = {user[0]}")
-    for i in burgers:
+    for i in product:
         d = i["price"]
         cursor.execute(f"INSERT INTO Orders (UserID, Order_Price, Order_Count, Order_Sale) VALUES ({user[0]}, {orderPrice}, {d}, {sale})")
         count = len(i["ingr"])
@@ -339,9 +334,6 @@ def productBuy():
     user = cursor.execute(f"select * from Users where ID_User = {user[0]}").fetchall()[0]
     connection.commit()
 
-#def checkQuantityIngridients():
-
-    
 def userInterface():
     match(input("Выберите функцию!  (1 - Составить заказ, 2 - История, 3 - Выход): ")):
         case "1":

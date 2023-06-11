@@ -36,6 +36,8 @@ CREATE TABLE Users (
 	User_Mail VARCHAR(max) NOT NULL
 );
 
+--select * from Users
+
 CREATE TABLE Orders (
     ID_Order INT PRIMARY KEY IDENTITY(1,1),
     Order_ProductName VARCHAR(MAX) NOT NULL DEFAULT('Окрошка на квасе'),
@@ -70,7 +72,7 @@ INSERT INTO [dbo].[Ingredients]
 ('Соль', 10, 50, 5)
 GO
 
-select * from Ingredients
+--select * from Ingredients
 
 INSERT INTO [dbo].[Users]
 ([User_Login],[User_Password],[User_Role],[User_Balance], [User_Mail]) VALUES

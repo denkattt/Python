@@ -98,8 +98,10 @@ def selectIngredient():
         select_query = f"SELECT * FROM Ingredients"
         cursor.execute(select_query)
         ingrs = cursor.fetchall()
+        x = 1
         for i in ingrs:
-            print(f"{i[0]} - {i[1]} - {i[2]}$ - {i[3]}шт - {i[4]}$(Закупочная цена)")
+            print(f"{x} - {i[1]} - {i[2]}$ - {i[3]}шт - {i[4]}$(Закупочная цена)")
+            x += 1
         ingrID = input("Введите номер ингредиента: ")
         ingr = ingrs[int(ingrID)-1]
         if ingr is None:
